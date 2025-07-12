@@ -1,0 +1,48 @@
+{
+  "name": "stackit-shared",
+  "version": "1.0.0",
+  "description": "Shared utilities and database connections for StackIt platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "shared",
+    "utilities",
+    "database",
+    "stackit",
+    "postgresql",
+    "redis"
+  ],
+  "author": "StackIt Team",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bismuth01/stackit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bismuth01/stackit/issues"
+  },
+  "homepage": "https://github.com/bismuth01/stackit#readme"
+}
