@@ -27,7 +27,33 @@ The StackIt platform uses a microservices architecture with:
 
 ## 🚀 Quick Setup
 
-### Prerequisites
+### Option 1: Docker Setup (Recommended)
+
+The easiest way to get started with StackIt databases:
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# One-command setup
+./docker.sh setup
+./docker.sh up dev
+```
+
+This provides:
+- ✅ **PostgreSQL** with all schemas and data
+- ✅ **Redis** with optimized configuration  
+- ✅ **PgAdmin** at http://localhost:5050
+- ✅ **Redis Commander** at http://localhost:8081
+- ✅ **Automatic testing** and health checks
+
+See [Docker Guide](../DOCKER.md) for complete documentation.
+
+### Option 2: Local Installation
+
+If you prefer local installation:
+
+#### Prerequisites
 
 1. **Install PostgreSQL**
    ```bash
@@ -64,7 +90,7 @@ The StackIt platform uses a microservices architecture with:
    sudo apt-get install -y nodejs
    ```
 
-### Automated Setup
+#### Automated Setup
 
 Run the automated setup script:
 
@@ -81,14 +107,14 @@ This script will:
 - ✅ Test all connections
 - ✅ Display next steps
 
-### Verify Setup
+#### Verify Setup
 
 ```bash
 # Test database connections
 node database/scripts/test-connections.js
 ```
 
-## 🔧 Manual Setup
+## 🔧 Manual Setup (Local Installation Only)
 
 If you prefer to set up manually or the automated script fails:
 
@@ -115,6 +141,9 @@ psql -U stackit_user -d stackit_users -f database/scripts/setup-user-db.sql
 
 # Setup content database
 psql -U stackit_user -d stackit_content -f database/scripts/setup-content-db.sql
+
+# Setup notification system
+psql -U stackit_user -d stackit_content -f database/scripts/setup-notifications-db.sql
 ```
 
 ### 3. Test Redis Connection
@@ -204,14 +233,37 @@ redis-cli ping
   - `usage_count` (INTEGER)
   - `created_at` (TIMESTAMP)
 
+- **`notifications`**: In-app notification system
+  - `id` (UUID, Primary Key)
+  - `user_id` (UUID, References users.id)
+  - `type` (VARCHAR: 'answer' | 'comment' | 'mention' | 'vote')
+  - `message` (TEXT)
+  - `actor_user_id` (UUID, References users.id)
+  - `question_id`, `answer_id`, `comment_id` (UUID, Context references)
+  - `is_read` (BOOLEAN)
+  - `created_at` (TIMESTAMP)
+
+- **`user_notification_preferences`**: User notification settings
+  - `user_id` (UUID, Primary Key, References users.id)
+  - `answer_notifications`, `comment_notifications`, `mention_notifications`, `vote_notifications` (BOOLEAN)
+  - `created_at`, `updated_at` (TIMESTAMP)
+
 #### Triggers:
 - **`update_vote_counts`**: Automatically updates vote counts when votes are added/removed
+- **`notify_question_answered`**: Creates notification when someone answers a question
+- **`notify_content_commented`**: Creates notification when someone comments on content
+- **`notify_content_voted`**: Creates notification when someone upvotes content
 
 ## 🧪 Testing
 
 ### Connection Test
 ```bash
 node database/scripts/test-connections.js
+```
+
+### Notification System Test
+```bash
+node database/scripts/test-notifications.js
 ```
 
 ### Manual Database Queries
@@ -227,6 +279,10 @@ redis-cli -n 0 ping  # Session store
 redis-cli -n 1 ping  # Cache store
 redis-cli -n 2 ping  # Notification store
 redis-cli -n 3 ping  # Vote store
+
+# Test notification system
+SELECT COUNT(*) FROM notifications;
+SELECT COUNT(*) FROM user_notification_preferences;
 ```
 
 ### Sample Data Verification
@@ -239,6 +295,10 @@ SELECT title, tags, vote_count FROM questions;
 
 -- Check sample tags
 SELECT name, usage_count FROM tags;
+
+-- Check notification system
+SELECT type, message, is_read FROM notifications LIMIT 5;
+SELECT user_id, answer_notifications FROM user_notification_preferences;
 ```
 
 ## 🔍 Troubleshooting
@@ -406,35 +466,20 @@ cp /usr/local/var/db/redis/dump.rdb database/backups/redis_backup.rdb
 
 ```
 database/
-├── README.md                 # This file
+├── README.md                     # This file
 ├── scripts/
-│   ├── setup-databases.sh    # Automated setup script
-│   ├── setup-user-db.sql     # Users database schema
-│   ├── setup-content-db.sql  # Content database schema
-│   └── test-connections.js   # Connection test script
-└── backups/                  # Database backup files
+│   ├── setup-databases.sh        # Automated setup script
+│   ├── setup-user-db.sql         # Users database schema
+│   ├── setup-content-db.sql      # Content database schema
+│   ├── setup-notifications-db.sql # Notification system schema
+│   ├── test-connections.js       # Connection test script
+│   └── test-notifications.js     # Notification system test
+└── backups/                      # Database backup files
     ├── users_backup.sql
     ├── content_backup.sql
     └── redis_backup.rdb
 ```
 
-## 🤝 Contributing
-
-When modifying database schemas:
-
-1. **Create migration scripts** in `database/migrations/`
-2. **Update this README** with schema changes
-3. **Test thoroughly** with the connection test script
-4. **Update sample data** if needed
-
-## 📞 Support
-
-If you encounter issues:
-
-1. Check the [Troubleshooting](#troubleshooting) section
-2. Run the connection test: `node database/scripts/test-connections.js`
-3. Check service logs for specific error messages
-4. Verify environment variables in `.env` files
 
 ## 🔗 Related Documentation
 

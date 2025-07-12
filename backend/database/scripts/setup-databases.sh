@@ -155,6 +155,14 @@ initialize_schemas() {
     else
         print_warning "Content database schema might already be initialized"
     fi
+
+    # Initialize notification system
+    print_info "Setting up notification system..."
+    if psql -U stackit_user -d stackit_content -f "$SCRIPT_DIR/setup-notifications-db.sql" > /dev/null 2>&1; then
+        print_status "Notification system initialized"
+    else
+        print_warning "Notification system might already be initialized"
+    fi
 }
 
 # Test database connections
@@ -179,6 +187,14 @@ test_connections() {
     else
         print_error "Database connection test failed!"
         exit 1
+    fi
+
+    # Test notification system
+    print_info "Testing notification system..."
+    if node database/scripts/test-notifications.js; then
+        print_status "Notification system test successful!"
+    else
+        print_warning "Notification system test failed (may need manual setup)"
     fi
 }
 
@@ -232,7 +248,13 @@ show_next_steps() {
     echo "4. Database connections:"
     echo "   Users DB: postgresql://stackit_user:stackit_password@localhost:5432/stackit_users"
     echo "   Content DB: postgresql://stackit_user:stackit_password@localhost:5432/stackit_content"
-    echo "   Redis: redis://localhost:6379"
+    echo "   Redis: redis://localhost:6379 (DB 2 for notifications)"
+    echo ""
+    echo "5. Notification system features:"
+    echo "   ✅ Auto-notifications for answers, comments, votes"
+    echo "   ✅ User notification preferences"
+    echo "   ✅ Real-time Redis integration"
+    echo "   ✅ Mention notification support"
     echo ""
     echo "🚀 Happy coding!"
 }
@@ -276,6 +298,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_TESTS=true
             shift
             ;;
+        --skip-notifications)
+            SKIP_NOTIFICATIONS=true
+            shift
+            ;;
         --verbose)
             VERBOSE=true
             shift
@@ -286,9 +312,10 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --skip-tests    Skip database connection tests"
-            echo "  --verbose       Enable verbose output"
-            echo "  --help          Show this help message"
+            echo "  --skip-tests          Skip database connection tests"
+            echo "  --skip-notifications  Skip notification system setup"
+            echo "  --verbose             Enable verbose output"
+            echo "  --help                Show this help message"
             echo ""
             exit 0
             ;;
