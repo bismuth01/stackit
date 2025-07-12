@@ -1,8 +1,11 @@
+// Basicc 
 import express, {Request, Response} from "express";
 import dotenv from "dotenv";
 
 import { NotificationQuery } from "./types/NotificationQuery";
 import { NotificationAdd } from "./types/NotificationAdd";
+
+import { authenticateJWT } from "./middleware/AuthenticateJWT";
 
 dotenv.config();
 
