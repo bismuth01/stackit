@@ -7,15 +7,7 @@ CREATE TABLE users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    display_name VARCHAR(100),
-    bio TEXT,
-    avatar_url TEXT,
-    reputation INTEGER DEFAULT 0,
-    is_verified BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- User sessions table
@@ -39,12 +31,11 @@ CREATE TABLE user_preferences (
 -- Indexes for performance
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_reputation ON users(reputation DESC);
 CREATE INDEX idx_user_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at);
 
 -- Sample data
-INSERT INTO users (username, email, password_hash, display_name, bio, reputation) VALUES
-('john_doe', 'john@example.com', '$2b$10$hash1', 'John Doe', 'Full-stack developer', 150),
-('jane_smith', 'jane@example.com', '$2b$10$hash2', 'Jane Smith', 'Data scientist', 200),
-('dev_guru', 'guru@example.com', '$2b$10$hash3', 'Dev Guru', 'Senior developer', 500);
+INSERT INTO users (username, email, password_hash) VALUES
+('john_doe', 'john@example.com', '$2b$10$hash1'),
+('jane_smith', 'jane@example.com', '$2b$10$hash2'),
+('dev_guru', 'guru@example.com', '$2b$10$hash3');
