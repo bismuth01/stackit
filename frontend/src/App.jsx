@@ -4,8 +4,9 @@ import HomePage from './pages/HomePage.jsx';
 import AskQuestionPage from './pages/AskQuestionPage.jsx';
 import QuestionDetailPage from './pages/QuestionDetailPage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
-import "./Global.css"
+import "./Global.css";
 import { mockQuestions, mockAnswers, mockNotifications } from './data/mockData';
+import { AnimatePresence, motion } from 'framer-motion'; // 👈 added
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -19,7 +20,6 @@ const App = () => {
 
   // AUTH
   const handleAuth = (formData) => {
-    // TEMP: Replace this with actual JWT call in future
     setUser({ username: formData.username, email: formData.email });
     setCurrentPage('home');
   };
@@ -33,7 +33,7 @@ const App = () => {
     if (action === 'logout') {
       handleLogout();
     } else {
-      setAuthMode(action); // 'login' or 'register'
+      setAuthMode(action);
       setCurrentPage('auth');
     }
   };
@@ -66,12 +66,10 @@ const App = () => {
     };
     setAnswers([...answers, newAnswer]);
 
-    // Update answer count in the question
     setQuestions(questions.map(q =>
       q.id === answerData.questionId ? { ...q, answers: q.answers + 1 } : q
     ));
 
-    // Add notification
     const question = questions.find(q => q.id === answerData.questionId);
     if (question && question.author !== user.username) {
       setNotifications([
@@ -88,7 +86,6 @@ const App = () => {
     }
   };
 
-  // VOTING
   const handleVote = (id, direction, type) => {
     const increment = direction === 'up' ? 1 : -1;
 
@@ -103,7 +100,6 @@ const App = () => {
     }
   };
 
-  // ACCEPT ANSWER
   const handleAcceptAnswer = (answerId) => {
     setAnswers(answers.map(a =>
       a.id === answerId
@@ -117,18 +113,14 @@ const App = () => {
     ));
   };
 
-  // SELECT QUESTION
   const handleQuestionClick = (question) => {
     setSelectedQuestion(question);
     setCurrentPage('question');
-
-    // Increment views
     setQuestions(questions.map(q =>
       q.id === question.id ? { ...q, views: q.views + 1 } : q
     ));
   };
 
-  // NOTIFICATION CLICK
   const handleNotificationClick = (notification) => {
     setNotifications(notifications.map(n =>
       n.id === notification.id ? { ...n, read: true } : n
@@ -156,41 +148,77 @@ const App = () => {
       />
 
       <main>
-        {currentPage === 'home' && (
-          <HomePage
-            questions={questions}
-            onQuestionClick={handleQuestionClick}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {currentPage === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <HomePage
+                questions={questions}
+                onQuestionClick={handleQuestionClick}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+            </motion.div>
+          )}
 
-        {currentPage === 'ask' && user && (
-          <AskQuestionPage
-            onQuestionSubmit={handleQuestionSubmit}
-            onCancel={() => setCurrentPage('home')}
-          />
-        )}
+          {currentPage === 'ask' && user && (
+            <motion.div
+              key="ask"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AskQuestionPage
+                onQuestionSubmit={handleQuestionSubmit}
+                onCancel={() => setCurrentPage('home')}
+              />
+            </motion.div>
+          )}
 
-        {currentPage === 'question' && selectedQuestion && (
-          <QuestionDetailPage
-            question={selectedQuestion}
-            answers={currentPageAnswers}
-            onBackToHome={() => setCurrentPage('home')}
-            onAnswerSubmit={handleAnswerSubmit}
-            onVote={handleVote}
-            onAcceptAnswer={handleAcceptAnswer}
-            user={user}
-          />
-        )}
+          {currentPage === 'question' && selectedQuestion && (
+            <motion.div
+              key="question"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <QuestionDetailPage
+                question={selectedQuestion}
+                answers={currentPageAnswers}
+                onBackToHome={() => setCurrentPage('home')}
+                onAnswerSubmit={handleAnswerSubmit}
+                onVote={handleVote}
+                onAcceptAnswer={handleAcceptAnswer}
+                user={user}
+              />
+            </motion.div>
+          )}
 
-        {currentPage === 'auth' && (
-          <AuthPage
-            mode={authMode}
-            onAuth={handleAuth}
-            onToggleMode={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-          />
-        )}
+          {currentPage === 'auth' && (
+            <motion.div
+              key="auth"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AuthPage
+                mode={authMode}
+                onAuth={handleAuth}
+                onToggleMode={() =>
+                  setAuthMode(authMode === 'login' ? 'register' : 'login')
+                }
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

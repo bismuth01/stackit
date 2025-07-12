@@ -1,17 +1,30 @@
 import React, { useState } from 'react';
 import RichTextEditor from '../components/RichTextEditor';
 import TagInput from '../components/TagInput';
+
 const AskQuestionPage = ({ onQuestionSubmit, onCancel }) => {
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(''); // Now using HTML string
   const [tags, setTags] = useState([]);
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
     const newErrors = {};
-    if (!title.trim()) newErrors.title = 'Title is required';
-    if (!description.trim()) newErrors.description = 'Description is required';
-    if (tags.length === 0) newErrors.tags = 'At least one tag is required';
+
+    if (!title.trim()) {
+      newErrors.title = 'Title is required';
+    }
+
+    // Strip HTML tags to validate content
+    const plainText = description.replace(/<(.|\n)*?>/g, '').trim();
+    if (!plainText) {
+      newErrors.description = 'Description is required';
+    }
+
+    if (tags.length === 0) {
+      newErrors.tags = 'At least one tag is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -21,7 +34,7 @@ const AskQuestionPage = ({ onQuestionSubmit, onCancel }) => {
     if (validateForm()) {
       onQuestionSubmit({
         title: title.trim(),
-        description: description.trim(),
+        description: description.trim(), // Keep HTML string
         tags
       });
     }

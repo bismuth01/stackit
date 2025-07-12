@@ -16,10 +16,12 @@ const QuestionDetailPage = ({
 
   const handleAnswerSubmit = (e) => {
     e.preventDefault();
-    if (newAnswer.trim()) {
+
+    const plainText = newAnswer.replace(/<(.|\n)*?>/g, '').trim();
+    if (plainText) {
       onAnswerSubmit({
         questionId: question.id,
-        content: newAnswer.trim()
+        content: newAnswer.trim(),
       });
       setNewAnswer('');
       setShowAnswerForm(false);
@@ -38,8 +40,8 @@ const QuestionDetailPage = ({
       {/* Question */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">{question.title}</h1>
-        <div className="prose max-w-none mb-6">
-          <p className="text-gray-700">{question.description}</p>
+        <div className="prose max-w-none text-gray-700 mb-6">
+          <div dangerouslySetInnerHTML={{ __html: question.description }} />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -93,8 +95,8 @@ const QuestionDetailPage = ({
               </div>
             )}
 
-            <div className="prose max-w-none mb-4">
-              <p className="text-gray-700">{answer.content}</p>
+            <div className="prose max-w-none text-gray-700 mb-4">
+              <div dangerouslySetInnerHTML={{ __html: answer.content }} />
             </div>
 
             <div className="flex items-center justify-between">
