@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Bell,
-  User,
-  LogIn,
-  UserPlus,
-  Home,
-  Plus,
-  Menu,
-  X,
+  Bell, User, LogIn, UserPlus, Home, Plus, Menu, X,
 } from 'lucide-react';
+import DecryptedText from './DecryptedText'; // ✅ adjust path if needed
 
 const Navigation = ({
   user,
@@ -24,15 +18,17 @@ const Navigation = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-[#1e1a2e] border-b border-[#5c4f6e] sticky top-0 z-50 text-primary font-futuristic">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <button
-              onClick={() => onPageChange('home')}
-              className="text-2xl font-bold text-blue-600 hover:text-blue-700"
-            >
-              StackIt
+            <button onClick={() => onPageChange('home')}>
+             <DecryptedText
+                text="StackIt"
+                className="text-2xl font-bold font-futuristic text-primary hover:text-white"
+                speed={35}
+                  animateOn="view"
+              />
             </button>
           </div>
 
@@ -40,10 +36,10 @@ const Navigation = ({
           <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={() => onPageChange('home')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition ${
                 currentPage === 'home'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'bg-[#5c4f6e] text-white'
+                  : 'text-primary hover:text-white'
               }`}
             >
               <Home className="w-4 h-4 inline mr-2" />
@@ -53,10 +49,10 @@ const Navigation = ({
             {user && (
               <button
                 onClick={() => onPageChange('ask')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition ${
                   currentPage === 'ask'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:text-gray-900'
+                    ? 'bg-[#5c4f6e] text-white'
+                    : 'text-primary hover:text-white'
                 }`}
               >
                 <Plus className="w-4 h-4 inline mr-2" />
@@ -69,10 +65,11 @@ const Navigation = ({
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                {/* Notifications */}
                 <div className="relative">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 text-gray-600 hover:text-gray-900"
+                    className="relative p-2 text-primary hover:text-white"
                   >
                     <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
@@ -83,25 +80,25 @@ const Navigation = ({
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                      <div className="p-4 border-b border-gray-200">
-                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    <div className="absolute right-0 mt-2 w-80 bg-[#2b273e] border border-[#5c4f6e] rounded-lg shadow-lg z-10">
+                      <div className="p-4 border-b border-[#5c4f6e]">
+                        <h3 className="font-semibold text-primary">Notifications</h3>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <p className="p-4 text-gray-500 text-center">No notifications</p>
+                          <p className="p-4 text-gray-400 text-center">No notifications</p>
                         ) : (
                           notifications.map(notification => (
                             <div
                               key={notification.id}
-                              className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                                !notification.read ? 'bg-blue-50' : ''
+                              className={`p-4 border-b border-[#3e385a] hover:bg-[#3e385a] cursor-pointer ${
+                                !notification.read ? 'bg-[#453a67]' : ''
                               }`}
                               onClick={() => onNotificationClick(notification)}
                             >
-                              <p className="text-sm text-gray-800">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.questionTitle}</p>
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-sm text-primary">{notification.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{notification.questionTitle}</p>
+                              <p className="text-xs text-gray-500 mt-1">
                                 {new Date(notification.timestamp).toLocaleString()}
                               </p>
                             </div>
@@ -112,12 +109,13 @@ const Navigation = ({
                   )}
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <User className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm text-gray-700">{user.username}</span>
+                {/* User Info */}
+                <div className="flex items-center space-x-2 text-primary">
+                  <User className="w-5 h-5" />
+                  <span className="text-sm">{user.username}</span>
                   <button
                     onClick={() => onAuthAction('logout')}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="text-sm hover:text-white"
                   >
                     Logout
                   </button>
@@ -127,14 +125,14 @@ const Navigation = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => onAuthAction('login')}
-                  className="text-sm text-gray-700 hover:text-gray-900 flex items-center"
+                  className="text-sm text-primary hover:text-white flex items-center"
                 >
                   <LogIn className="w-4 h-4 mr-1" />
                   Login
                 </button>
                 <button
                   onClick={() => onAuthAction('register')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 flex items-center"
+                  className="bg-[#5c4f6e] text-white px-4 py-2 rounded-md text-sm hover:bg-[#6a5d80] flex items-center"
                 >
                   <UserPlus className="w-4 h-4 mr-1" />
                   Register
@@ -142,10 +140,10 @@ const Navigation = ({
               </div>
             )}
 
-            {/* Mobile menu button */}
+            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
+              className="md:hidden p-2 rounded-md text-primary hover:text-white"
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -154,14 +152,14 @@ const Navigation = ({
 
         {/* Mobile Navigation */}
         {showMobileMenu && (
-          <div className="md:hidden border-t border-gray-200">
+          <div className="md:hidden border-t border-[#5c4f6e] bg-[#1e1a2e]">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <button
                 onClick={() => {
                   onPageChange('home');
                   setShowMobileMenu(false);
                 }}
-                className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900"
+                className="block px-3 py-2 text-base font-medium text-primary hover:text-white"
               >
                 Home
               </button>
@@ -171,7 +169,7 @@ const Navigation = ({
                     onPageChange('ask');
                     setShowMobileMenu(false);
                   }}
-                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-primary hover:text-white"
                 >
                   Ask Question
                 </button>

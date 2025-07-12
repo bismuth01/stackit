@@ -25,18 +25,18 @@ const TagInput = ({ tags, onChange, placeholder = "Add tags..." }) => {
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg p-2 focus-within:ring-2 focus-within:ring-blue-500">
+    <div className="border border-[#5c4f6e] bg-[#1e1a2e] text-[#b3a8c9] rounded-lg p-3 focus-within:ring-2 focus-within:ring-purple-500 transition">
       <div className="flex flex-wrap gap-2 mb-2">
         {tags.map((tag, index) => (
           <span
             key={index}
-            className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+            className="bg-[#5c4f6e] text-[#e4dff2] px-2 py-1 rounded-full text-sm flex items-center gap-1 hover:bg-[#7e6c9c]"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="text-blue-600 hover:text-blue-800"
+              className="text-purple-300 hover:text-purple-400 transition"
               aria-label={`Remove ${tag}`}
             >
               <X className="w-3 h-3" />
@@ -50,7 +50,7 @@ const TagInput = ({ tags, onChange, placeholder = "Add tags..." }) => {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full outline-none text-sm"
+        className="w-full bg-transparent text-sm placeholder-[#8c82a4] focus:outline-none"
       />
     </div>
   );

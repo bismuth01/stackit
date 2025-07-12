@@ -29,21 +29,21 @@ const HomePage = ({ questions, onQuestionClick, searchQuery, onSearchChange }) =
     });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#1e1a2e] text-[#b3a8c9] px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Questions</h1>
+        <h1 className="text-3xl font-bold text-[#e5e1f2] mb-6">Explore Questions</h1>
 
         {/* Search & Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-5 h-5 text-[#8b7da7]" />
             <input
               type="text"
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-[#2a253a] text-[#d6cde5] border border-[#5c4f6e] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-[#8b7da7]"
             />
           </div>
 
@@ -51,7 +51,7 @@ const HomePage = ({ questions, onQuestionClick, searchQuery, onSearchChange }) =
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-[#2a253a] text-[#d6cde5] border border-[#5c4f6e] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="newest">Newest</option>
             <option value="votes">Most Votes</option>
@@ -62,7 +62,7 @@ const HomePage = ({ questions, onQuestionClick, searchQuery, onSearchChange }) =
           <select
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-[#2a253a] text-[#d6cde5] border border-[#5c4f6e] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="">All Tags</option>
             {allTags.map(tag => (
@@ -76,7 +76,7 @@ const HomePage = ({ questions, onQuestionClick, searchQuery, onSearchChange }) =
       <div className="space-y-6">
         {filteredQuestions.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No questions found.</p>
+            <p className="text-[#8b7da7] text-lg">No questions found.</p>
           </div>
         ) : (
           filteredQuestions.map((question) => (

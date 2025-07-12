@@ -48,16 +48,16 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+    <div className="min-h-screen bg-[#201d30] text-[#b3a8c9] flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-[#2a243d] p-8 rounded-lg shadow-md border border-[#3d3656]">
+        <h2 className="text-2xl font-bold mb-6 text-center">
           {mode === 'login' ? 'Login' : 'Register'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username */}
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="username" className="block text-sm mb-2">
               Username
             </label>
             <input
@@ -66,17 +66,17 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.username ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-4 py-2 rounded-lg bg-[#1e1a2e] text-[#b3a8c9] border ${
+                errors.username ? 'border-red-500' : 'border-[#5c4f6e]'
+              } focus:outline-none focus:ring-2 focus:ring-[#5c4f6e]`}
             />
-            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+            {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username}</p>}
           </div>
 
-          {/* Email (only in register mode) */}
+          {/* Email */}
           {mode === 'register' && (
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm mb-2">
                 Email
               </label>
               <input
@@ -85,17 +85,17 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 rounded-lg bg-[#1e1a2e] text-[#b3a8c9] border ${
+                  errors.email ? 'border-red-500' : 'border-[#5c4f6e]'
+                } focus:outline-none focus:ring-2 focus:ring-[#5c4f6e]`}
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
             </div>
           )}
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-sm mb-2">
               Password
             </label>
             <input
@@ -104,17 +104,17 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-4 py-2 rounded-lg bg-[#1e1a2e] text-[#b3a8c9] border ${
+                errors.password ? 'border-red-500' : 'border-[#5c4f6e]'
+              } focus:outline-none focus:ring-2 focus:ring-[#5c4f6e]`}
             />
-            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+            {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
           </div>
 
-          {/* Confirm Password (only in register mode) */}
+          {/* Confirm Password */}
           {mode === 'register' && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm mb-2">
                 Confirm Password
               </label>
               <input
@@ -123,12 +123,12 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 rounded-lg bg-[#1e1a2e] text-[#b3a8c9] border ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-[#5c4f6e]'
+                } focus:outline-none focus:ring-2 focus:ring-[#5c4f6e]`}
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
               )}
             </div>
           )}
@@ -136,7 +136,7 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-[#5c4f6e] text-white py-2 rounded-lg hover:bg-[#6e5c8f] transition-all"
           >
             {mode === 'login' ? 'Login' : 'Register'}
           </button>
@@ -146,7 +146,7 @@ const AuthPage = ({ mode, onAuth, onToggleMode }) => {
         <div className="mt-6 text-center">
           <button
             onClick={onToggleMode}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-[#b3a8c9] hover:text-white underline"
           >
             {mode === 'login'
               ? "Don't have an account? Register here"

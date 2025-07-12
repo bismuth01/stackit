@@ -16,7 +16,6 @@ const QuestionDetailPage = ({
 
   const handleAnswerSubmit = (e) => {
     e.preventDefault();
-
     const plainText = newAnswer.replace(/<(.|\n)*?>/g, '').trim();
     if (plainText) {
       onAnswerSubmit({
@@ -29,18 +28,18 @@ const QuestionDetailPage = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-[#b3a8c9]">
       <button
         onClick={onBackToHome}
-        className="mb-6 text-blue-600 hover:text-blue-800 flex items-center"
+        className="mb-6 text-[#b3a8c9] hover:text-[#ffffff] flex items-center"
       >
         ← Back to Questions
       </button>
 
       {/* Question */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">{question.title}</h1>
-        <div className="prose max-w-none text-gray-700 mb-6">
+      <div className="bg-[#1e1a2e] p-6 rounded-lg shadow-sm border border-[#5c4f6e] mb-8">
+        <h1 className="text-2xl font-bold mb-4">{question.title}</h1>
+        <div className="prose max-w-none text-[#b3a8c9] mb-6">
           <div dangerouslySetInnerHTML={{ __html: question.description }} />
         </div>
 
@@ -48,79 +47,83 @@ const QuestionDetailPage = ({
           {question.tags.map((tag, index) => (
             <span
               key={index}
-              className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
+              className="bg-[#5c4f6e] text-white px-2 py-1 rounded-full text-sm"
             >
               {tag}
             </span>
           ))}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between text-sm">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => onVote(question.id, 'up', 'question')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-[#5c4f6e] rounded"
               >
-                <ChevronUp className="w-5 h-5 text-gray-600" />
+                <ChevronUp className="w-5 h-5 text-[#b3a8c9]" />
               </button>
               <span className="font-semibold">{question.votes}</span>
               <button
                 onClick={() => onVote(question.id, 'down', 'question')}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-[#5c4f6e] rounded"
               >
-                <ChevronDown className="w-5 h-5 text-gray-600" />
+                <ChevronDown className="w-5 h-5 text-[#b3a8c9]" />
               </button>
             </div>
-            <span className="text-sm text-gray-500">{question.views} views</span>
+            <span>{question.views} views</span>
           </div>
-          <div className="text-sm text-gray-500">
-            Asked by {question.author} on {new Date(question.createdAt).toLocaleDateString()}
-          </div>
+          <span>
+            Asked by {question.author} on{' '}
+            {new Date(question.createdAt).toLocaleDateString()}
+          </span>
         </div>
       </div>
 
       {/* Answers */}
       <div className="mb-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
+        <h2 className="text-xl font-bold mb-6">
           {answers.length} Answer{answers.length !== 1 ? 's' : ''}
         </h2>
 
         {answers.map((answer) => (
-          <div key={answer.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-4">
+          <div
+            key={answer.id}
+            className="bg-[#1e1a2e] p-6 rounded-lg shadow-sm border border-[#5c4f6e] mb-4"
+          >
             {answer.accepted && (
-              <div className="flex items-center text-green-600 mb-4">
+              <div className="flex items-center text-green-400 mb-4">
                 <Check className="w-5 h-5 mr-2" />
                 <span className="font-semibold">Accepted Answer</span>
               </div>
             )}
 
-            <div className="prose max-w-none text-gray-700 mb-4">
+            <div className="prose max-w-none text-[#b3a8c9] mb-4">
               <div dangerouslySetInnerHTML={{ __html: answer.content }} />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => onVote(answer.id, 'up', 'answer')}
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="p-1 hover:bg-[#5c4f6e] rounded"
                   >
-                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                    <ChevronUp className="w-5 h-5 text-[#b3a8c9]" />
                   </button>
                   <span className="font-semibold">{answer.votes}</span>
                   <button
                     onClick={() => onVote(answer.id, 'down', 'answer')}
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="p-1 hover:bg-[#5c4f6e] rounded"
                   >
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                    <ChevronDown className="w-5 h-5 text-[#b3a8c9]" />
                   </button>
                 </div>
 
                 {user && user.username === question.author && !answer.accepted && (
                   <button
                     onClick={() => onAcceptAnswer(answer.id)}
-                    className="text-green-600 hover:text-green-800 flex items-center"
+                    className="text-green-400 hover:text-green-500 flex items-center"
                   >
                     <Check className="w-4 h-4 mr-1" />
                     Accept Answer
@@ -128,9 +131,10 @@ const QuestionDetailPage = ({
                 )}
               </div>
 
-              <div className="text-sm text-gray-500">
-                Answered by {answer.author} on {new Date(answer.createdAt).toLocaleDateString()}
-              </div>
+              <span>
+                Answered by {answer.author} on{' '}
+                {new Date(answer.createdAt).toLocaleDateString()}
+              </span>
             </div>
           </div>
         ))}
@@ -138,8 +142,8 @@ const QuestionDetailPage = ({
 
       {/* Answer Form */}
       {user && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Answer</h3>
+        <div className="bg-[#1e1a2e] p-6 rounded-lg shadow-sm border border-[#5c4f6e]">
+          <h3 className="text-lg font-semibold mb-4">Your Answer</h3>
 
           {!showAnswerForm ? (
             <button
@@ -170,7 +174,7 @@ const QuestionDetailPage = ({
                     setShowAnswerForm(false);
                     setNewAnswer('');
                   }}
-                  className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400"
+                  className="bg-[#5c4f6e] text-white px-6 py-2 rounded-lg hover:bg-[#6f5e86]"
                 >
                   Cancel
                 </button>
