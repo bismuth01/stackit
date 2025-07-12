@@ -1,9 +1,20 @@
-const mongoose = require('mongoose');
-const answerSchema = new mongoose.Schema({
-  content: String,
-  question: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
-  author:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  votes: { type: Number, default: 0 }
-}, { timestamps: true });
+const pool = require('../db');
 
-module.exports = mongoose.model('Answer', answerSchema);
+exports.createAnswer = async ({ questionId, userId, content }) => {
+  const res = await pool.query(
+    `INSERT INTO answers (question_id, user_id, content)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [questionId, userId, content]
+  );
+  return res.rows[0];
+};
+
+exports.voteAnswer = async ({ answerId, voteType }) => {
+  const modifier = voteType === 'up' ? 1 : -1;
+  const res = await pool.query(
+    `UPDATE answers SET vote_count = vote_count + $1 WHERE id = $2 RETURNING *`,
+    [modifier, answerId]
+  );
+  return res.rows[0];
+};

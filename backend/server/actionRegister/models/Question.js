@@ -1,10 +1,22 @@
-const mongoose = require('mongoose');
-const questionSchema = new mongoose.Schema({
-  title: String,
-  description: String, // rich text (HTML/Markdown)
-  tags: [String],
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  acceptedAnswer: { type: mongoose.Schema.Types.ObjectId, ref: 'Answer' }
-}, { timestamps: true });
+const pool = require('../db');
 
-module.exports = mongoose.model('Question', questionSchema);
+exports.createQuestion = async ({ userId, title, content, tags }) => {
+  const res = await pool.query(
+    `INSERT INTO questions (user_id, title, content, tags)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [userId, title, content, tags]
+  );
+  return res.rows[0];
+};
+
+exports.getAllQuestions = async () => {
+  const res = await pool.query(
+    `SELECT * FROM questions ORDER BY created_at DESC`
+  );
+  return res.rows;
+};
+
+exports.getQuestionById = async (id) => {
+  const res = await pool.query(`SELECT * FROM questions WHERE id = $1`, [id]);
+  return res.rows[0];
+};
