@@ -1,21 +1,13 @@
-const notificationModel = require('../models/Notification'); // 
+const Notification = require('../models/Notification');
 
-exports.getUserNotifications = async (req, res) => {
-  try {
-    const notifs = await notificationModel.getNotifications(req.user.userId);
-    res.json(notifs);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch notifications' });
-  }
+exports.getNotifications = (req, res) => {
+  Notification.get(req.user.userId, (err, rows) => {
+    err ? res.status(500).json({ message: 'Error' }) : res.json(rows);
+  });
 };
 
-exports.markNotificationRead = async (req, res) => {
-  try {
-    await notificationModel.markAsRead(req.params.id);
-    res.json({ message: 'Notification marked as read' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to update notification' });
-  }
+exports.markAsRead = (req, res) => {
+  Notification.markRead(req.params.id, err => {
+    err ? res.status(500).json({ message: 'Error' }) : res.json({ message: 'Marked' });
+  });
 };

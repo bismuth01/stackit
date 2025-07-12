@@ -1,8 +1,5 @@
-const { Pool } = require('pg');
-require('dotenv').config();
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./data/stackit.db', (err) => {
+  if (err) console.error('DB open error', err);
 });
-
-module.exports = pool;
+module.exports = db;

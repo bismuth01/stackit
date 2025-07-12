@@ -1,34 +1,23 @@
-const questionModel = require('../models/Question');
+const Question = require('../models/Question');
 
-exports.createQuestion = async (req, res) => {
+exports.createQuestion = (req, res) => {
   const { title, content, tags } = req.body;
-  try {
-    const question = await questionModel.createQuestion({
-      userId: req.user.userId,
-      title,
-      content,
-      tags,
-    });
-    res.status(201).json(question);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to create question' });
-  }
+  Question.create({ userId: req.user.userId, title, content, tags }, (err, q) => {
+    if (err) return res.status(500).json({ message: 'Error' });
+    res.status(201).json(q);
+  });
 };
 
-exports.getAllQuestions = async (req, res) => {
-  try {
-    const questions = await questionModel.getAllQuestions();
-    res.json(questions);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch questions' });
-  }
+exports.getAllQuestions = (req, res) => {
+  Question.getAll((err, rows) => {
+    if (err) return res.status(500).json({ message: 'Error' });
+    res.json(rows);
+  });
 };
 
-exports.getQuestionById = async (req, res) => {
-  try {
-    const question = await questionModel.getQuestionById(req.params.id);
-    res.json(question);
-  } catch (err) {
-    res.status(500).json({ message: 'Question not found' });
-  }
+exports.getQuestionById = (req, res) => {
+  Question.getById(req.params.id, (err, row) => {
+    if (err || !row) return res.status(404).json({ message: 'Not found' });
+    res.json(row);
+  });
 };

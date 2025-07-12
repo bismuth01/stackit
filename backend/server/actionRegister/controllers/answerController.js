@@ -1,41 +1,24 @@
-const answerModel = require('../models/Answer');
-const notificationModel = require('../models/Notification');
-const pool = require('../db');
+const Answer = require('../models/Answer');
+const Notification = require('../models/Notification');
+const Question = require('../models/Question');
 
-exports.postAnswer = async (req, res) => {
-  const { content } = req.body;
-  const { questionId } = req.params;
-  const userId = req.user.userId;
-
-  try {
-    const answer = await answerModel.createAnswer({ questionId, userId, content });
-    const question = await pool.query(`SELECT user_id FROM questions WHERE id = $1`, [questionId]);
-    const recipientId = question.rows[0]?.user_id;
-
-    if (recipientId && recipientId !== userId) {
-      await notificationModel.createNotification({
-        recipientId,
-        message: 'Someone answered your question',
-        link: `/questions/${questionId}`,
-        type: 'answer',
-      });
-    }
-
-    res.status(201).json(answer);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to post answer' });
-  }
+exports.postAnswer = (req, res) => {
+  const { questionId } = req.params, { content } = req.body, uid = req.user.userId;
+  Answer.create({ questionId, userId: uid, content }, (err, ans) => {
+    if (err) return res.status(500).json({ message: 'Error' });
+    Question.getById(questionId, (e, q) => {
+      if (q.user_id !== uid) {
+        Notification.create({ userId: q.user_id, message: 'New answer', link: `/q/${questionId}` }, () => {});
+      }
+      res.status(201).json(ans);
+    });
+  });
 };
 
-exports.voteAnswer = async (req, res) => {
-  const { voteType } = req.body;
-  try {
-    const answer = await answerModel.voteAnswer({
-      answerId: req.params.id,
-      voteType,
-    });
-    res.json(answer);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to vote' });
-  }
+exports.voteAnswer = (req, res) => {
+  const mod = req.body.voteType === 'up' ? 1 : -1;
+  Answer.vote(req.params.id, mod, (err) => {
+    if (err) return res.status(500).json({ message: 'Error' });
+    res.json({ message: 'Voted' });
+  });
 };

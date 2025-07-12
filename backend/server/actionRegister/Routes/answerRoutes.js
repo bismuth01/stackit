@@ -1,9 +1,9 @@
 const express = require('express');
-const { postAnswer, voteAnswer } = require('../controllers/answerController');
-const auth = require('../middleware/authMiddleware');
 const router = express.Router();
+const answerController = require('../controllers/answerController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/:questionId', auth, postAnswer);
-router.post('/:id/vote', auth, voteAnswer);
+router.post('/:questionId', authMiddleware, answerController.postAnswer);
+router.post('/:id/vote', authMiddleware, answerController.voteAnswer);
 
 module.exports = router;

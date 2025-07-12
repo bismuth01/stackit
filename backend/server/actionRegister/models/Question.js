@@ -1,22 +1,17 @@
-const pool = require('../db');
+const db = require('../db');
 
-exports.createQuestion = async ({ userId, title, content, tags }) => {
-  const res = await pool.query(
-    `INSERT INTO questions (user_id, title, content, tags)
-     VALUES ($1, $2, $3, $4) RETURNING *`,
-    [userId, title, content, tags]
-  );
-  return res.rows[0];
+exports.create = (q, cb) => {
+  const tags = q.tags.join(',');
+  db.run(`INSERT INTO questions (user_id,title,content,tags) VALUES (?,?,?,?)`,
+    [q.userId, q.title, q.content, tags], function(err) {
+      cb(err, this.lastID ? { id: this.lastID, ...q } : null);
+    });
 };
 
-exports.getAllQuestions = async () => {
-  const res = await pool.query(
-    `SELECT * FROM questions ORDER BY created_at DESC`
-  );
-  return res.rows;
+exports.getAll = cb => {
+  db.all(`SELECT * FROM questions ORDER BY created_at DESC`, cb);
 };
 
-exports.getQuestionById = async (id) => {
-  const res = await pool.query(`SELECT * FROM questions WHERE id = $1`, [id]);
-  return res.rows[0];
+exports.getById = (id, cb) => {
+  db.get(`SELECT * FROM questions WHERE id = ?`, [id], cb);
 };
