@@ -2,68 +2,123 @@
 import express, {Request, Response} from "express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import { authenticateJWT } from "./middleware/AuthenticateJWT";
+import { Pool } from "pg";
 
-// Types for structured inputs
-import { NotificationQuery } from "./types/NotificationQuery";
-import { NotificationAdd } from "./types/NotificationAdd";
-import { NotificationDelete } from "./types/NotificationDelete";
-import { NotificationRead } from "./types/NotificationRead";
+import { authenticateJWT, AuthenticatedRequest } from "./middleware/AuthenticateJWT";
 
 dotenv.config();
 
 // Only for testing API
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
+if(!process.env.DATABASE_URL){
+    throw new Error("Database URL Missing");
+}
+const DATABASE_URL = process.env.DATABASE_URL;
+
+export const db = new Pool({
+  connectionString: DATABASE_URL,
+});
+
 const app = express();
 const port = 3000;
 
 app.use(express.json());
-app.use('/notification/get', authenticateJWT);
-app.use('/notification/read', authenticateJWT);
-app.use('/notification/delete', authenticateJWT);
 
 app.get('/', (req: Request, res: Response) => {
     console.log(`Server running`);
 })
 
-app.get('/notification/get', (req:Request<{}, {}, {}, NotificationQuery>, res) => {
-    const query_details = req.query;
-    const userId = query_details.userId;
-    console.log(`Email received: ${userId}`);
-    res.json({userId});
-})
+app.get("/notification/get", authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.id;
 
-app.post('/notification/add', (req: Request<{}, {}, NotificationAdd>, res: Response) => {
-    const notification_details = req.body;
-    const { userId, type, dateTime, subject, body } = notification_details;
-    
-    res.json({
-        message: "Notification added successfully",
-        notification: notification_details
-    });
-})
+  try {
+    const result = await db.query(
+      "SELECT * FROM notification_details WHERE user_id = $1 ORDER BY created_at DESC",
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
-app.post('/notification/delete', (req: Request<{}, {}, {}, NotificationDelete>, res:Response) => {
-    const notif_details = req.query;
-    const notifId = notif_details.notifId;
+app.post("/notification/add", authenticateJWT, async (req: Request, res: Response) => {
+  const {
+    userId,
+    type,
+    message,
+    actor_user_id,
+    question_id,
+    answer_id,
+    comment_id,
+  } = req.body;
 
-    res.json(`Notif deleted: ${notifId}`);
-})
+  try {
+    await db.query(
+      `INSERT INTO notifications 
+       (user_id, type, message, actor_user_id, question_id, answer_id, comment_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, type, message, actor_user_id, question_id, answer_id, comment_id]
+    );
 
-app.post('/notification/read', (req: Request<{}, {}, {}, NotificationRead>, res:Response) => {
-    const notif_details = req.query;
-    const notifId = notif_details.notifId;
+    res.status(201).json({ message: "Notification added successfully" });
+  } catch (err) {
+    console.error("DB insert error:", err);
+    res.status(500).json({ error: "Failed to add notification" });
+  }
+});
 
-    res.json(`Notif read: ${notifId}`);
-})
+app.post("/notification/delete", authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  const notifId = req.query.notifId as string;
+  const userId = req.user?.id;
 
-app.listen(port, () => {
-    console.log(`Listening on port ${port}`)
-})
+  if (!notifId) {
+    return res.status(400).json({ error: "Notification ID is required" });
+  }
+
+  try {
+    const result = await db.query(
+      `DELETE FROM notifications
+       WHERE id = $1 AND user_id = $2`,
+      [notifId, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Notification not found or unauthorized" });
+    }
+
+    res.json({ message: "Notification deleted" });
+  } catch (err) {
+    console.error("DB delete error:", err);
+    res.status(500).json({ error: "Failed to delete notification" });
+  }
+});
+
+
+app.post("/notification/read", authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.id;
+  const { notifId } = req.query;
+
+  try {
+    const result = await db.query(
+      "SELECT mark_notifications_read($1, $2::UUID[])",
+      [userId, [notifId]]
+    );
+    res.json({ updated: result.rows[0].mark_notifications_read });
+  } catch (err) {
+    console.error("Error marking notifications:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 app.get('/login/:userId', (req:Request, res:Response) => {
     const userId = req.params.userId;
     const token = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "1h" });
     res.json({ token });
+})
+
+app.listen(port, () => {
+    console.log(`Listening on port ${port}`)
 })
