@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import path from "path";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string }; // Extend Request with user field

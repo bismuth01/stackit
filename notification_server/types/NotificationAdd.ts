@@ -1,7 +1,7 @@
 import { NotificationType } from "./NotificationType"
 
 export interface NotificationAdd {
-    email: string,
+    userId: string,
     type: NotificationType,
     dateTime: string,
     subject: string,

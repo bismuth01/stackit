@@ -1,3 +1,3 @@
 export interface NotificationQuery {
-    email: string
+    userId: string
 }
