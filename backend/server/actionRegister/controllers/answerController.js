@@ -1,5 +1,5 @@
-const answerModel = require('../models/answerModel');
-const notificationModel = require('../models/notificationModel');
+const answerModel = require('../models/Answer');
+const notificationModel = require('../models/Notification');
 const pool = require('../db');
 
 exports.postAnswer = async (req, res) => {
