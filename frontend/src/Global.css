@@ -1,0 +1,6 @@
+@import "tailwindcss";
+body {
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', sans-serif;
+  background-color: #1e1a2e;
+  color: #e5e7eb; /* Tailwind's gray-100 */
+}
