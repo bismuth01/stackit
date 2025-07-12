@@ -1,0 +1,209 @@
+# Production override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  postgres:
+    environment:
+      # Production PostgreSQL settings
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    secrets:
+      - postgres_admin_password
+    volumes:
+      # Production data persistence
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./database/scripts:/scripts:ro
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    command: >
+      postgres
+      -c log_statement=none
+      -c log_destination=stderr
+      -c log_min_duration_statement=1000
+      -c shared_preload_libraries=''
+      -c max_connections=300
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  redis:
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    volumes:
+      - redis_prod_data:/data
+      - ./docker/redis/redis-prod.conf:/usr/local/etc/redis/redis.conf:ro
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass-file /run/secrets/redis_password
+      --appendonly yes
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 512M
+          cpus: "0.25"
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  db_setup:
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD_FILE: /run/secrets/postgres_admin_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - postgres_admin_password
+      - redis_password
+    volumes:
+      - ./database/scripts:/scripts:ro
+      - ./docker/postgres/setup:/setup:ro
+
+  # Production backup service
+  db_backup:
+    image: postgres:15-alpine
+    container_name: stackit_db_backup
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD_FILE: /run/secrets/postgres_admin_password
+      BACKUP_RETENTION_DAYS: 30
+    secrets:
+      - postgres_admin_password
+    volumes:
+      - ./docker/postgres/backup:/backup
+      - backup_data:/backups
+    networks:
+      - stackit_network
+    entrypoint: /backup/run-backup.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.25"
+
+  # Production monitoring
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: stackit_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:$(cat /run/secrets/postgres_admin_password)@postgres:5432/postgres?sslmode=disable"
+    secrets:
+      - postgres_admin_password
+    ports:
+      - "9187:9187"
+    networks:
+      - stackit_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  redis_exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: stackit_redis_exporter
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    ports:
+      - "9121:9121"
+    networks:
+      - stackit_network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Remove development services in production
+  pgadmin:
+    deploy:
+      replicas: 0
+    profiles:
+      - disabled
+
+  redis_commander:
+    deploy:
+      replicas: 0
+    profiles:
+      - disabled
+
+secrets:
+  postgres_admin_password:
+    file: ./secrets/postgres_admin_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+
+volumes:
+  postgres_prod_data:
+    driver: local
+    name: stackit_postgres_prod_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/stackit/postgres
+
+  redis_prod_data:
+    driver: local
+    name: stackit_redis_prod_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/stackit/redis
+
+  backup_data:
+    driver: local
+    name: stackit_backup_data
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/stackit/backups
+
+networks:
+  stackit_network:
+    external: true
+    name: stackit_prod_network

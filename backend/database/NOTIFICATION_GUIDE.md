@@ -540,24 +540,3 @@ ORDER BY unread_count DESC;
 | `create_mention_notification(...)` | Create mention | Multiple | `UUID` |
 | `cleanup_old_notifications(INTEGER)` | Cleanup old | `days_to_keep` | `INTEGER` |
 
-## 🤝 Contributing
-
-When extending the notification system:
-
-1. **Add new notification types**: Update the CHECK constraint in the `notifications` table
-2. **New triggers**: Follow the existing pattern in `setup-notifications-db.sql`
-3. **Update tests**: Add test cases to `test-notifications.js`
-4. **Document changes**: Update this guide and the main README
-
-## 📞 Support
-
-If you encounter issues:
-
-1. Run the test script: `node database/scripts/test-notifications.js`
-2. Check the [Troubleshooting](#troubleshooting) section
-3. Review database logs for trigger errors
-4. Verify Redis connectivity and configuration
-
----
-
-**Happy coding with notifications! 🔔**

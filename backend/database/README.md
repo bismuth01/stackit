@@ -27,7 +27,33 @@ The StackIt platform uses a microservices architecture with:
 
 ## 🚀 Quick Setup
 
-### Prerequisites
+### Option 1: Docker Setup (Recommended)
+
+The easiest way to get started with StackIt databases:
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# One-command setup
+./docker.sh setup
+./docker.sh up dev
+```
+
+This provides:
+- ✅ **PostgreSQL** with all schemas and data
+- ✅ **Redis** with optimized configuration  
+- ✅ **PgAdmin** at http://localhost:5050
+- ✅ **Redis Commander** at http://localhost:8081
+- ✅ **Automatic testing** and health checks
+
+See [Docker Guide](../DOCKER.md) for complete documentation.
+
+### Option 2: Local Installation
+
+If you prefer local installation:
+
+#### Prerequisites
 
 1. **Install PostgreSQL**
    ```bash
@@ -64,7 +90,7 @@ The StackIt platform uses a microservices architecture with:
    sudo apt-get install -y nodejs
    ```
 
-### Automated Setup
+#### Automated Setup
 
 Run the automated setup script:
 
@@ -81,14 +107,14 @@ This script will:
 - ✅ Test all connections
 - ✅ Display next steps
 
-### Verify Setup
+#### Verify Setup
 
 ```bash
 # Test database connections
 node database/scripts/test-connections.js
 ```
 
-## 🔧 Manual Setup
+## 🔧 Manual Setup (Local Installation Only)
 
 If you prefer to set up manually or the automated script fails:
 
@@ -454,23 +480,6 @@ database/
     └── redis_backup.rdb
 ```
 
-## 🤝 Contributing
-
-When modifying database schemas:
-
-1. **Create migration scripts** in `database/migrations/`
-2. **Update this README** with schema changes
-3. **Test thoroughly** with the connection test script
-4. **Update sample data** if needed
-
-## 📞 Support
-
-If you encounter issues:
-
-1. Check the [Troubleshooting](#troubleshooting) section
-2. Run the connection test: `node database/scripts/test-connections.js`
-3. Check service logs for specific error messages
-4. Verify environment variables in `.env` files
 
 ## 🔗 Related Documentation
 

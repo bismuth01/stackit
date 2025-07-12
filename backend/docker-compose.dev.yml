@@ -1,0 +1,102 @@
+# Development override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  postgres:
+    environment:
+      # Development-friendly settings
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      # Add development-specific volumes
+      - ./database/scripts:/scripts
+      - ./docker/postgres/dev-init:/docker-entrypoint-initdb.d/dev
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_destination=stderr
+      -c log_min_duration_statement=0
+      -c shared_preload_libraries=''
+      -c max_connections=100
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c random_page_cost=1.0
+
+  redis:
+    environment:
+      # Development Redis settings
+      REDIS_PASSWORD: ""
+    volumes:
+      - ./docker/redis/redis-dev.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --save 60 1000
+
+  # Development database seeding service
+  db_seed:
+    image: postgres:15-alpine
+    container_name: stackit_db_seed
+    depends_on:
+      db_setup:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: stackit_user
+      PGPASSWORD: stackit_password
+    volumes:
+      - ./database/scripts:/scripts
+      - ./docker/postgres/seed:/seed
+    networks:
+      - stackit_network
+    entrypoint: /seed/run-seed.sh
+    restart: "no"
+    profiles:
+      - seed
+
+  # Hot reload for database changes (development only)
+  db_watcher:
+    image: node:18-alpine
+    container_name: stackit_db_watcher
+    working_dir: /app
+    volumes:
+      - ./database:/app/database
+      - ./shared:/app/shared
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: stackit_user
+      DB_PASSWORD: stackit_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - stackit_network
+    command: >
+      sh -c "
+        npm install -g nodemon &&
+        npm install pg redis &&
+        nodemon --watch database/scripts --ext sql,js --exec 'node database/scripts/test-connections.js || true'
+      "
+    depends_on:
+      db_setup:
+        condition: service_completed_successfully
+    profiles:
+      - watch
+      - development
+
+# Development-specific volume overrides
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./docker/volumes/postgres_dev
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./docker/volumes/redis_dev

@@ -1,240 +1,250 @@
-const { userDb, contentDb, sessionStore, cacheStore, notificationStore, voteStore, connectRedis } = require('../../shared/database/connections');
+const { Client } = require("pg");
+const redis = require("redis");
+
+// Database configuration
+const dbConfig = {
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER || "stackit_user",
+  password: process.env.DB_PASSWORD || "stackit_password",
+};
+
+// Redis configuration
+const redisConfig = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: process.env.REDIS_PORT || 6379,
+};
 
 async function testPostgreSQLConnections() {
-  console.log('🔍 Testing PostgreSQL connections...\n');
+  console.log("🔍 Testing PostgreSQL connections...\n");
 
-  try {
-    // Test Users Database
-    console.log('Testing Users Database...');
-    const userResult = await userDb.query('SELECT COUNT(*) FROM users');
-    console.log('✅ Users DB connected successfully');
-    console.log(`   Users count: ${userResult.rows[0].count}`);
+  const databases = [
+    { name: "Users Database", db: "stackit_users" },
+    { name: "Content Database", db: "stackit_content" },
+  ];
 
-    // Test user table structure
-    const userTableInfo = await userDb.query(`
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_name = 'users'
-      ORDER BY ordinal_position
-    `);
-    console.log(`   Table structure: ${userTableInfo.rows.length} columns`);
+  for (const database of databases) {
+    try {
+      console.log(`Testing ${database.name}...`);
+      const client = new Client({
+        ...dbConfig,
+        database: database.db,
+      });
 
-  } catch (error) {
-    console.error('❌ Users DB connection failed:', error.message);
-    return false;
+      await client.connect();
+
+      // Test basic query
+      const result = await client.query(
+        "SELECT NOW() as current_time, current_database() as db_name",
+      );
+      console.log(`✅ ${database.name} connected successfully`);
+      console.log(`   Database: ${result.rows[0].db_name}`);
+      console.log(`   Time: ${result.rows[0].current_time}`);
+
+      // Test table counts if in content database
+      if (database.db === "stackit_content") {
+        try {
+          const tableResult = await client.query(`
+                        SELECT
+                            (SELECT COUNT(*) FROM questions) as questions,
+                            (SELECT COUNT(*) FROM answers) as answers,
+                            (SELECT COUNT(*) FROM notifications) as notifications,
+                            (SELECT COUNT(*) FROM user_notification_preferences) as preferences
+                    `);
+          console.log(
+            `   Tables: ${tableResult.rows[0].questions} questions, ${tableResult.rows[0].answers} answers`,
+          );
+          console.log(
+            `   Notifications: ${tableResult.rows[0].notifications} total, ${tableResult.rows[0].preferences} user preferences`,
+          );
+        } catch (tableError) {
+          console.log(
+            `   ⚠️  Could not query table counts: ${tableError.message}`,
+          );
+        }
+      }
+
+      if (database.db === "stackit_users") {
+        try {
+          const userResult = await client.query(
+            "SELECT COUNT(*) as count FROM users",
+          );
+          console.log(`   Users: ${userResult.rows[0].count} registered`);
+        } catch (userError) {
+          console.log(
+            `   ⚠️  Could not query user count: ${userError.message}`,
+          );
+        }
+      }
+
+      await client.end();
+      console.log("");
+    } catch (error) {
+      console.error(`❌ ${database.name} connection failed:`);
+      console.error(`   Error: ${error.message}`);
+      console.log("");
+      throw error;
+    }
   }
-
-  try {
-    // Test Content Database
-    console.log('\nTesting Content Database...');
-    const contentResult = await contentDb.query('SELECT COUNT(*) FROM questions');
-    console.log('✅ Content DB connected successfully');
-    console.log(`   Questions count: ${contentResult.rows[0].count}`);
-
-    const tagsResult = await contentDb.query('SELECT COUNT(*) FROM tags');
-    console.log(`   Tags count: ${tagsResult.rows[0].count}`);
-
-    // Test content table structure
-    const questionTableInfo = await contentDb.query(`
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_name = 'questions'
-      ORDER BY ordinal_position
-    `);
-    console.log(`   Questions table: ${questionTableInfo.rows.length} columns`);
-
-  } catch (error) {
-    console.error('❌ Content DB connection failed:', error.message);
-    return false;
-  }
-
-  return true;
 }
 
 async function testRedisConnections() {
-  console.log('\n🔍 Testing Redis connections...\n');
+  console.log("🔍 Testing Redis connections...\n");
 
-  try {
-    // Connect all Redis clients
-    await connectRedis();
+  const databases = [
+    { name: "Session Store (DB 0)", db: 0 },
+    { name: "Cache Store (DB 1)", db: 1 },
+    { name: "Notification Store (DB 2)", db: 2 },
+    { name: "Vote Store (DB 3)", db: 3 },
+  ];
 
-    // Test main Redis client
-    console.log('Testing Main Redis Client...');
-    await sessionStore.ping();
-    console.log('✅ Session Store (Redis DB 0) connected');
+  for (const database of databases) {
+    let client;
+    try {
+      console.log(`Testing ${database.name}...`);
 
-    await cacheStore.ping();
-    console.log('✅ Cache Store (Redis DB 1) connected');
+      client = redis.createClient({
+        host: redisConfig.host,
+        port: redisConfig.port,
+        db: database.db,
+      });
 
-    await notificationStore.ping();
-    console.log('✅ Notification Store (Redis DB 2) connected');
+      await client.connect();
 
-    await voteStore.ping();
-    console.log('✅ Vote Store (Redis DB 3) connected');
+      // Test basic operations
+      const pingResult = await client.ping();
+      console.log(`✅ ${database.name} connected successfully`);
+      console.log(`   Ping response: ${pingResult}`);
 
-    // Test basic operations
-    console.log('\nTesting Redis operations...');
+      // Test set/get operations
+      const testKey = `test_connection_${Date.now()}`;
+      await client.set(testKey, "test_value", { EX: 10 });
+      const getValue = await client.get(testKey);
 
-    // Test session store
-    await sessionStore.set('test:session', 'session_data', { EX: 60 });
-    const sessionData = await sessionStore.get('test:session');
-    console.log('✅ Session store read/write test passed');
+      if (getValue === "test_value") {
+        console.log(`   Read/Write: Working`);
+        await client.del(testKey);
+      } else {
+        console.log(`   ⚠️  Read/Write test failed`);
+      }
 
-    // Test cache store
-    await cacheStore.set('test:cache', JSON.stringify({ test: 'data' }), { EX: 60 });
-    const cacheData = await cacheStore.get('test:cache');
-    console.log('✅ Cache store read/write test passed');
+      // Get database info
+      const info = await client.info("keyspace");
+      const dbInfo = info
+        .split("\n")
+        .find((line) => line.startsWith(`db${database.db}:`));
+      if (dbInfo) {
+        const keys = dbInfo.match(/keys=(\d+)/);
+        console.log(`   Keys: ${keys ? keys[1] : "0"}`);
+      } else {
+        console.log(`   Keys: 0 (empty database)`);
+      }
 
-    // Test notification store
-    await notificationStore.lpush('test:notifications', 'notification1');
-    const notificationCount = await notificationStore.llen('test:notifications');
-    console.log('✅ Notification store list operations test passed');
-
-    // Test vote store
-    await voteStore.hset('test:votes', 'user1', '1');
-    const voteValue = await voteStore.hget('test:votes', 'user1');
-    console.log('✅ Vote store hash operations test passed');
-
-    // Cleanup test data
-    await sessionStore.del('test:session');
-    await cacheStore.del('test:cache');
-    await notificationStore.del('test:notifications');
-    await voteStore.del('test:votes');
-
-    return true;
-  } catch (error) {
-    console.error('❌ Redis connection failed:', error.message);
-    return false;
-  }
-}
-
-async function testCrossServiceOperations() {
-  console.log('\n🔍 Testing cross-service operations...\n');
-
-  try {
-    // Test getting user data from users DB and using it in content queries
-    console.log('Testing cross-database operations...');
-
-    const users = await userDb.query('SELECT id, username FROM users LIMIT 1');
-    if (users.rows.length > 0) {
-      const userId = users.rows[0].id;
-      const username = users.rows[0].username;
-
-      console.log(`✅ Retrieved user: ${username} (${userId})`);
-
-      // Check if this user has any questions in content DB
-      const userQuestions = await contentDb.query(
-        'SELECT COUNT(*) FROM questions WHERE user_id = $1',
-        [userId]
-      );
-
-      console.log(`✅ User has ${userQuestions.rows[0].count} questions`);
-
-      // Test caching user data
-      await cacheStore.set(`user:${userId}`, JSON.stringify({
-        id: userId,
-        username: username,
-        cached_at: new Date().toISOString()
-      }), { EX: 3600 });
-
-      const cachedUser = await cacheStore.get(`user:${userId}`);
-      console.log('✅ User data cached and retrieved successfully');
-
-      // Cleanup
-      await cacheStore.del(`user:${userId}`);
+      await client.quit();
+      console.log("");
+    } catch (error) {
+      console.error(`❌ ${database.name} connection failed:`);
+      console.error(`   Error: ${error.message}`);
+      if (client) {
+        try {
+          await client.quit();
+        } catch (e) {}
+      }
+      console.log("");
+      throw error;
     }
-
-    return true;
-  } catch (error) {
-    console.error('❌ Cross-service operations failed:', error.message);
-    return false;
   }
 }
 
-async function displaySystemInfo() {
-  console.log('\n📊 System Information\n');
+async function testNotificationSystem() {
+  console.log("🔍 Testing Notification System...\n");
 
   try {
-    // PostgreSQL version info
-    const pgVersion = await userDb.query('SELECT version()');
-    console.log('PostgreSQL:', pgVersion.rows[0].version.split(' ')[1]);
+    const client = new Client({
+      ...dbConfig,
+      database: "stackit_content",
+    });
 
-    // Redis info
-    const redisInfo = await sessionStore.info();
-    const redisVersion = redisInfo.split('\r\n').find(line => line.startsWith('redis_version:'));
-    console.log('Redis:', redisVersion ? redisVersion.split(':')[1] : 'Unknown');
+    await client.connect();
 
-    // Database sizes
-    const userDbSize = await userDb.query(`
-      SELECT pg_size_pretty(pg_database_size('stackit_users')) as size
-    `);
-    console.log('Users DB size:', userDbSize.rows[0].size);
+    // Test notification functions
+    console.log("Testing notification functions...");
 
-    const contentDbSize = await contentDb.query(`
-      SELECT pg_size_pretty(pg_database_size('stackit_content')) as size
-    `);
-    console.log('Content DB size:', contentDbSize.rows[0].size);
+    // Test unread count function
+    const unreadResult = await client.query(`
+            SELECT get_unread_notification_count('11111111-1111-1111-1111-111111111111'::uuid) as count
+        `);
+    console.log(
+      `✅ Unread count function works: ${unreadResult.rows[0].count} unread notifications`,
+    );
 
-    // Connection pool info
-    console.log('Users DB pool - Total:', userDb.totalCount, 'Idle:', userDb.idleCount);
-    console.log('Content DB pool - Total:', contentDb.totalCount, 'Idle:', contentDb.idleCount);
+    // Test notification triggers exist
+    const triggerResult = await client.query(`
+            SELECT trigger_name, event_object_table
+            FROM information_schema.triggers
+            WHERE trigger_name LIKE '%notify%'
+            ORDER BY trigger_name
+        `);
 
+    console.log(`✅ Found ${triggerResult.rows.length} notification triggers:`);
+    triggerResult.rows.forEach((row) => {
+      console.log(`   - ${row.trigger_name} on ${row.event_object_table}`);
+    });
+
+    // Test notification view
+    const viewResult = await client.query(`
+            SELECT COUNT(*) as count FROM notification_details LIMIT 1
+        `);
+    console.log(`✅ Notification view accessible`);
+
+    await client.end();
+    console.log("");
   } catch (error) {
-    console.error('❌ Failed to get system info:', error.message);
+    console.error("❌ Notification system test failed:");
+    console.error(`   Error: ${error.message}`);
+    console.log("");
+    throw error;
   }
 }
 
 async function runAllTests() {
-  console.log('🚀 StackIt Database Connection Test\n');
-  console.log('=====================================\n');
+  console.log("🚀 StackIt Database Connection Tests");
+  console.log("====================================\n");
 
-  const startTime = Date.now();
-  let allTestsPassed = true;
+  try {
+    await testPostgreSQLConnections();
+    await testRedisConnections();
+    await testNotificationSystem();
 
-  // Run all tests
-  const pgTest = await testPostgreSQLConnections();
-  const redisTest = await testRedisConnections();
-  const crossServiceTest = await testCrossServiceOperations();
-
-  allTestsPassed = pgTest && redisTest && crossServiceTest;
-
-  // Display system info
-  await displaySystemInfo();
-
-  const endTime = Date.now();
-  const duration = endTime - startTime;
-
-  console.log('\n=====================================');
-  console.log('🏁 Test Results\n');
-
-  if (allTestsPassed) {
-    console.log('🎉 All database connections and operations successful!');
-    console.log('✅ PostgreSQL: Users and Content databases connected');
-    console.log('✅ Redis: All stores (session, cache, notification, vote) connected');
-    console.log('✅ Cross-service operations working');
-    console.log(`\n⏱️  Total test time: ${duration}ms`);
-    console.log('\n🚀 Your StackIt platform is ready for development!');
-    process.exit(0);
-  } else {
-    console.log('❌ Some tests failed. Please check the error messages above.');
-    console.log('\n🔧 Common solutions:');
-    console.log('   - Make sure PostgreSQL is running: brew services start postgresql');
-    console.log('   - Make sure Redis is running: brew services start redis');
-    console.log('   - Check if databases exist: psql -U postgres -l');
-    console.log('   - Verify connection credentials in .env files');
+    console.log("🎉 All tests passed successfully!");
+    console.log("\n📊 Summary:");
+    console.log("  ✅ PostgreSQL databases connected");
+    console.log("  ✅ Redis databases connected");
+    console.log("  ✅ Notification system functional");
+    console.log("\n🔗 Connection details:");
+    console.log(`  PostgreSQL: ${dbConfig.host}:${dbConfig.port}`);
+    console.log(`  Redis: ${redisConfig.host}:${redisConfig.port}`);
+    console.log("\n🎛️  Management interfaces:");
+    console.log("  PgAdmin: http://localhost:5050");
+    console.log("  Redis Commander: http://localhost:8081");
+  } catch (error) {
+    console.error("\n💥 Tests failed!");
+    console.error("Please check the error messages above and ensure:");
+    console.error("  1. Docker containers are running: ./docker.sh status");
+    console.error("  2. Database setup completed: ./docker.sh logs db_setup");
+    console.error("  3. No port conflicts with local services");
     process.exit(1);
   }
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n\n🛑 Test interrupted. Cleaning up...');
-  await require('../../shared/database/connections').gracefulShutdown();
-  process.exit(0);
-});
+// Run tests if this file is executed directly
+if (require.main === module) {
+  runAllTests();
+}
 
-// Run tests
-runAllTests().catch((error) => {
-  console.error('❌ Unexpected error during testing:', error);
-  process.exit(1);
-});
+module.exports = {
+  testPostgreSQLConnections,
+  testRedisConnections,
+  testNotificationSystem,
+  runAllTests,
+};
