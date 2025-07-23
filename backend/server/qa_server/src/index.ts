@@ -5,6 +5,8 @@ import {
 import { db } from "./db";
 
 const app = express();
+import cors from "cors";
+app.use(cors()); // Enables CORS for all origins
 app.use(express.json());
 
 function extractMentions(text: string): string[] {

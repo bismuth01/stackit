@@ -7,10 +7,10 @@ import QuestionDetailPage from './pages/QuestionDetailPage.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import './Global.css';
 import { AnimatePresence, motion } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid'; // ✅ Added
 
-// Backend URLs
-const BASE_URL = 'http://localhost:5000'; // Auth
-const QA_URL = 'http://localhost:5001'; // Questions & Answers
+const BASE_URL = 'http://localhost:8000'; // Auth
+const QA_URL = 'http://localhost:3000'; // Questions & Answers
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -22,19 +22,14 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [authMode, setAuthMode] = useState('login');
 
-  // AUTH
   const handleAuth = async (formData) => {
     try {
-      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = authMode === 'login' ? '/login' : '/register';
       const response = await axios.post(`${BASE_URL}${endpoint}`, formData);
 
       if (response.data.success) {
         if (authMode === 'login') {
-          setUser({
-            username: response.data.user.username,
-            email: response.data.user.email,
-            id: response.data.user.id || response.data.user._id,
-          });
+          setUser({ username: formData.username, password: formData.password });
           setCurrentPage('home');
         } else {
           alert('Registration successful. Please login.');
@@ -56,54 +51,64 @@ const App = () => {
   };
 
   const handleAuthAction = (action) => {
-    if (action === 'logout') {
-      handleLogout();
-    } else {
+    if (action === 'logout') handleLogout();
+    else {
       setAuthMode(action);
       setCurrentPage('auth');
     }
   };
 
-  // SUBMIT QUESTION
   const handleQuestionSubmit = async (questionData) => {
+    if (!user || !(user.id || user.username)) return alert("User not logged in");
+
+    const plainText = questionData.description.replace(/<[^>]+>/g, '').trim();
+    if (!plainText) return alert("Description can't be empty");
+    if (!questionData.title || !questionData.title.trim()) return alert("Title is required");
+    if (!questionData.tags || questionData.tags.length === 0) return alert("Please add at least one tag");
+
+    const generatedId = uuidv4(); // ✅ ID generator
+
     try {
       const response = await axios.post(`${QA_URL}/questions`, {
+        questionId: generatedId,
         authorId: user.id || user.username,
-        title: questionData.title,
+        title: questionData.title.trim(),
         body: questionData.description,
         tags: questionData.tags,
       });
 
-      const newQuestion = response.data;
+      const newQuestion = { ...response.data, id: generatedId, answers: 0, views: 0, votes: 0 };
       setQuestions([newQuestion, ...questions]);
       setCurrentPage('home');
     } catch (error) {
       console.error('Error submitting question:', error);
-      alert('Failed to submit question.');
+      alert(error.response?.data?.error || 'Failed to submit question.');
     }
   };
 
-  // SUBMIT ANSWER
   const handleAnswerSubmit = async (answerData) => {
     try {
-      const response = await axios.post(`${QA_URL}/answers`, {
+      const payload = {
         questionId: answerData.questionId,
         authorId: user.id || user.username,
         body: answerData.content,
-      });
+      };
 
-      const newAnswer = response.data;
+      const response = await axios.post(`${QA_URL}/answers`, payload);
+      const newAnswer = { ...response.data, questionId: answerData.questionId }; // ✅ Ensure questionId present
       setAnswers([...answers, newAnswer]);
 
       setQuestions(questions.map(q =>
-        q.id === answerData.questionId ? { ...q, answers: q.answers + 1 } : q
+        q.id === answerData.questionId
+          ? { ...q, answers: (q.answers || 0) + 1 }
+          : q
       ));
 
       const question = questions.find(q => q.id === answerData.questionId);
       if (question && question.author !== user.username) {
         setNotifications([
           {
-            id: notifications.length + 1,
+            id: uuidv4(),
             type: 'answer',
             message: `${user.username} answered your question`,
             questionTitle: question.title,
@@ -115,7 +120,7 @@ const App = () => {
       }
     } catch (err) {
       console.error('Error submitting answer:', err);
-      alert('Failed to post answer.');
+      alert(err.response?.data?.error || 'Failed to post answer.');
     }
   };
 
@@ -123,11 +128,11 @@ const App = () => {
     const increment = direction === 'up' ? 1 : -1;
     if (type === 'question') {
       setQuestions(questions.map(q =>
-        q.id === id ? { ...q, votes: q.votes + increment } : q
+        q.id === id ? { ...q, votes: (q.votes || 0) + increment } : q
       ));
     } else {
       setAnswers(answers.map(a =>
-        a.id === id ? { ...a, votes: a.votes + increment } : a
+        a.id === id ? { ...a, votes: (a.votes || 0) + increment } : a
       ));
     }
   };
@@ -145,12 +150,19 @@ const App = () => {
     ));
   };
 
-  const handleQuestionClick = (question) => {
+  const handleQuestionClick = async (question) => {
     setSelectedQuestion(question);
     setCurrentPage('question');
     setQuestions(questions.map(q =>
-      q.id === question.id ? { ...q, views: q.views + 1 } : q
+      q.id === question.id ? { ...q, views: (q.views || 0) + 1 } : q
     ));
+
+    try {
+      const res = await axios.get(`${QA_URL}/questions/${question.id}/answers`);
+      setAnswers(res.data || []);
+    } catch (err) {
+      console.error('Error loading answers:', err);
+    }
   };
 
   const handleNotificationClick = (notification) => {
@@ -159,9 +171,7 @@ const App = () => {
     ));
 
     const question = questions.find(q => q.title === notification.questionTitle);
-    if (question) {
-      handleQuestionClick(question);
-    }
+    if (question) handleQuestionClick(question);
   };
 
   const currentPageAnswers = selectedQuestion

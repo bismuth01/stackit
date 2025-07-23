@@ -2,6 +2,8 @@ import express from "express";
 import { addNotification, getNotificationsForUser } from "./db";
 
 const app = express();
+import cors from "cors";
+app.use(cors()); // Enables CORS for all origins
 app.use(express.json());
 
 app.post("/notify", (req, res) => {
